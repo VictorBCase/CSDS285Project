@@ -1,0 +1,108 @@
+### ===========================
+### Courses API Tests
+### ===========================
+
+### 1. Create a new course CS101
+POST http://localhost:3000/courses
+Content-Type: application/json
+
+{
+  "code": "CS101",
+  "name": "Intro to CS"
+}
+
+### 2. Create another course CS102
+POST http://localhost:3000/courses
+Content-Type: application/json
+
+{
+  "code": "CS102",
+  "name": "Data Structures"
+}
+
+### 3. Attempt to create course with missing name (should fail)
+POST http://localhost:3000/courses
+Content-Type: application/json
+
+{
+  "code": "CS103"
+}
+
+### 4. Get all courses
+GET http://localhost:3000/courses
+
+### ==================================================================
+### Reviews API Tests
+### ==================================================================
+
+### 5. Add a review to CS101
+POST http://localhost:3000/reviews
+Content-Type: application/json
+
+{
+  "courseId": 1,
+  "difficulty": 4,
+  "hoursPerWeek": 10
+}
+
+### 6. Add another review to CS101
+POST http://localhost:3000/reviews
+Content-Type: application/json
+
+{
+  "courseId": 1,
+  "difficulty": 5,
+  "hoursPerWeek": 12
+}
+
+### 7. Add a review to CS102
+POST http://localhost:3000/reviews
+Content-Type: application/json
+
+{
+  "courseId": 2,
+  "difficulty": 3,
+  "hoursPerWeek": 8
+}
+
+### 8. Attempt to add review with missing fields (should fail)
+POST http://localhost:3000/reviews
+Content-Type: application/json
+
+{
+  "courseId": 1,
+  "difficulty": 3
+}
+
+### 9. Attempt to add review with difficulty > 5 (should fail)
+POST http://localhost:3000/reviews
+Content-Type: application/json
+
+{
+  "courseId": 1,
+  "difficulty": 6,
+  "hoursPerWeek": 8
+}
+
+### 10. Attempt to add review for nonexistent course (should fail)
+POST http://localhost:3000/reviews
+Content-Type: application/json
+
+{
+  "courseId": 999,
+  "difficulty": 3,
+  "hoursPerWeek": 5
+}
+
+### ====================================================================
+### Course Stats Tests
+### ====================================================================
+
+### 11. Get stats for CS101 (should show avgDifficulty ~4.5, avgHours ~11, reviewCount 2)
+GET http://localhost:3000/courses/1/stats
+
+### 12. Get stats for CS102 (should show avgDifficulty 3, avgHours 8, reviewCount 1)
+GET http://localhost:3000/courses/2/stats
+
+### 13. Get stats for a course with no reviews (CS103)
+GET http://localhost:3000/courses/3/stats
