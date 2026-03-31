@@ -1,6 +1,3 @@
-### ===========================
-### Courses API Tests
-### ===========================
 
 ### 1. Create a new course CS101
 POST http://localhost:3000/courses
@@ -98,10 +95,10 @@ Content-Type: application/json
 ### Course Stats Tests
 ### ====================================================================
 
-### 11. Get stats for CS101 (should show avgDifficulty ~4.5, avgHours ~11, reviewCount 2)
+### 11. Get stats for CS101 
 GET http://localhost:3000/courses/1/stats
 
-### 12. Get stats for CS102 (should show avgDifficulty 3, avgHours 8, reviewCount 1)
+### 12. Get stats for CS102
 GET http://localhost:3000/courses/2/stats
 
 ### 13. Get stats for a course with no reviews (CS103)
