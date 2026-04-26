@@ -10,7 +10,7 @@ export default function CourseList() {
   const [courses, setCourses] = useState([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
-  const [newCourse, setNewCourse] = useState({ code: "", name: "" });
+  const [sort, setSort] = useState("none");
 
   const fetchCourses = async () => {
     const res = await axios.get(`${API}/courses`);
@@ -21,55 +21,71 @@ export default function CourseList() {
     fetchCourses();
   }, []);
 
-  const filtered = courses.filter(
+  let filtered = courses.filter(
     (c) =>
       c.code.toLowerCase().includes(search.toLowerCase()) ||
       c.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Sorting (basic placeholder – real sorting uses stats)
+  if (sort === "code") {
+    filtered.sort((a, b) => a.code.localeCompare(b.code));
+  }
+
   return (
     <div>
-      <input
-        placeholder="Search..."
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      {/* Search + Sort */}
+      <div className="flex gap-2 mb-4">
+        <input
+          className="w-full p-2 rounded border dark:bg-gray-800"
+          placeholder="🔍 Search courses..."
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-      <ul>
+        <select
+          className="p-2 rounded dark:bg-gray-800"
+          onChange={(e) => setSort(e.target.value)}
+        >
+          <option value="none">Sort</option>
+          <option value="code">By Code</option>
+        </select>
+      </div>
+
+      {/* Cards */}
+      <div className="grid md:grid-cols-2 gap-4">
         {filtered.map((c) => (
-          <li key={c.id}>
-            {c.code} - {c.name}
-            <button onClick={() => setSelected(c.id)}>Open</button>
-          </li>
+          <div
+            key={c.id}
+            className="bg-white dark:bg-gray-800 p-4 rounded shadow hover:scale-105 transition"
+          >
+            <h2 className="font-bold">{c.code}</h2>
+            <p className="text-gray-500">{c.name}</p>
+
+            <button
+              className="mt-2 bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded"
+              onClick={() => setSelected(c.id)}
+            >
+              Open
+            </button>
+          </div>
         ))}
-      </ul>
+      </div>
 
-      <h3>Add Course</h3>
-      <input
-        placeholder="Code"
-        onChange={(e) =>
-          setNewCourse({ ...newCourse, code: e.target.value })
-        }
-      />
-      <input
-        placeholder="Name"
-        onChange={(e) =>
-          setNewCourse({ ...newCourse, name: e.target.value })
-        }
-      />
-      <button
-        onClick={async () => {
-          await axios.post(`${API}/courses`, newCourse);
-          fetchCourses();
-        }}
-      >
-        Add
-      </button>
-
+      {/* MODAL */}
       {selected && (
-        <div>
-          <CourseStats courseId={selected} />
-          <AddReview courseId={selected} refresh={fetchCourses} />
-          <ReviewList courseId={selected} />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center animate-fadeIn">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded w-full max-w-lg animate-scaleIn">
+            <button
+              className="float-right text-red-500"
+              onClick={() => setSelected(null)}
+            >
+              ✖
+            </button>
+
+            <CourseStats courseId={selected} />
+            <AddReview courseId={selected} refresh={fetchCourses} />
+            <ReviewList courseId={selected} />
+          </div>
         </div>
       )}
     </div>

@@ -13,27 +13,32 @@ export default function CourseStats({ courseId }) {
 
   useEffect(() => {
     const fetchStats = async () => {
-      try {
-        const res = await axios.get(`${API}/courses/${courseId}/stats`);
-        setS(res.data);
-      } catch (err) {
-        console.error(err);
-        alert("Failed to fetch stats");
-      }
+      const res = await axios.get(`${API}/courses/${courseId}/stats`);
+      setS(res.data);
     };
 
     if (courseId) fetchStats();
   }, [courseId]);
 
   return (
-    <div>
-      <h3>Stats</h3>
-      <p>
-        ⭐ {Number(s?.avgRating ?? 0).toFixed(1)} | 📘{" "}
-        {Number(s?.avgDifficulty ?? 0).toFixed(1)} | ⏱{" "}
-        {Number(s?.avgHours ?? 0).toFixed(1)}
+    <div className="mb-4">
+      <h3 className="font-bold mb-2">Stats</h3>
+
+      <div className="flex gap-3">
+        <div className="bg-yellow-100 p-2 rounded">
+          ⭐ {Number(s.avgRating).toFixed(1)}
+        </div>
+        <div className="bg-blue-100 p-2 rounded">
+          📘 {Number(s.avgDifficulty).toFixed(1)}
+        </div>
+        <div className="bg-green-100 p-2 rounded">
+          ⏱ {Number(s.avgHours).toFixed(1)}
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-600 mt-1">
+        {s.reviewCount} reviews
       </p>
-      <p>{s?.reviewCount ?? 0} reviews</p>
     </div>
   );
 }
