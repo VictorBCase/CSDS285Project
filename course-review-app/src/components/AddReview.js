@@ -1,25 +1,34 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:3000";
+const API = "http://localhost:3000";
 
-function AddReview({ courseId, onReviewAdded }) {
-  const [review, setReview] = useState({ difficulty: "", hoursPerWeek: "" });
+export default function AddReview({ courseId, refresh }) {
+  const [r, setR] = useState({
+    difficulty: "",
+    hours: "",
+    rating: "",
+    comment: "",
+  });
 
-  const handleSubmit = async () => {
-    if (!review.difficulty || !review.hoursPerWeek) {
-      alert("Fill in all fields");
+  const submit = async () => {
+    // Validation
+    if (!r.difficulty || !r.hours || !r.rating) {
+      alert("Please fill all required fields");
       return;
     }
 
     try {
-      await axios.post(`${API_URL}/reviews`, {
+      await axios.post(`${API}/reviews`, {
         courseId,
-        difficulty: parseInt(review.difficulty),
-        hoursPerWeek: parseInt(review.hoursPerWeek),
+        difficulty: parseInt(r.difficulty),
+        hoursPerWeek: parseInt(r.hours), // ✅ fixed key
+        rating: parseInt(r.rating),
+        comment: r.comment,
       });
-      setReview({ difficulty: "", hoursPerWeek: "" });
-      onReviewAdded();
+
+      setR({ difficulty: "", hours: "", rating: "", comment: "" });
+      refresh();
       alert("Review added!");
     } catch (err) {
       console.error(err);
@@ -29,24 +38,36 @@ function AddReview({ courseId, onReviewAdded }) {
 
   return (
     <div style={{ marginTop: "20px" }}>
-      <h3>Add a Review</h3>
+      <h3>Add Review</h3>
+
       <input
+        type="number"
         placeholder="Difficulty (1-5)"
-        type="number"
-        min="1"
-        max="5"
-        value={review.difficulty}
-        onChange={(e) => setReview({ ...review, difficulty: e.target.value })}
+        value={r.difficulty}
+        onChange={(e) => setR({ ...r, difficulty: e.target.value })}
       />
+
       <input
-        placeholder="Hours per Week"
         type="number"
-        value={review.hoursPerWeek}
-        onChange={(e) => setReview({ ...review, hoursPerWeek: e.target.value })}
+        placeholder="Hours per Week"
+        value={r.hours}
+        onChange={(e) => setR({ ...r, hours: e.target.value })}
       />
-      <button onClick={handleSubmit}>Submit Review</button>
+
+      <input
+        type="number"
+        placeholder="Rating (1-5)"
+        value={r.rating}
+        onChange={(e) => setR({ ...r, rating: e.target.value })}
+      />
+
+      <input
+        placeholder="Comment (optional)"
+        value={r.comment}
+        onChange={(e) => setR({ ...r, comment: e.target.value })}
+      />
+
+      <button onClick={submit}>Submit Review</button>
     </div>
   );
 }
-
-export default AddReview;

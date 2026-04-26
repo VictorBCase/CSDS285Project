@@ -1,37 +1,39 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:3000";
+const API = "http://localhost:3000";
 
-function CourseStats({ courseId }) {
-  const [stats, setStats] = useState({
+export default function CourseStats({ courseId }) {
+  const [s, setS] = useState({
     avgDifficulty: 0,
     avgHours: 0,
+    avgRating: 0,
     reviewCount: 0,
   });
 
   useEffect(() => {
-    fetchStats();
-  }, [courseId]);
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`${API}/courses/${courseId}/stats`);
+        setS(res.data);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to fetch stats");
+      }
+    };
 
-  const fetchStats = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/courses/${courseId}/stats`);
-      setStats(res.data);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to fetch stats");
-    }
-  };
+    if (courseId) fetchStats();
+  }, [courseId]);
 
   return (
     <div>
-      <h3>Course Stats</h3>
-      <p>Average Difficulty: {stats.avgDifficulty.toFixed(1)}</p>
-      <p>Average Hours: {stats.avgHours.toFixed(1)}</p>
-      <p>Review Count: {stats.reviewCount}</p>
+      <h3>Stats</h3>
+      <p>
+        ⭐ {Number(s?.avgRating ?? 0).toFixed(1)} | 📘{" "}
+        {Number(s?.avgDifficulty ?? 0).toFixed(1)} | ⏱{" "}
+        {Number(s?.avgHours ?? 0).toFixed(1)}
+      </p>
+      <p>{s?.reviewCount ?? 0} reviews</p>
     </div>
   );
 }
-
-export default CourseStats;

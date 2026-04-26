@@ -1,82 +1,77 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import CourseStats from "./CourseStats";
 import AddReview from "./AddReview";
+import ReviewList from "./ReviewList";
 
-const API_URL = "http://localhost:3000";
+const API = "http://localhost:3000";
 
-function CourseList() {
+export default function CourseList() {
   const [courses, setCourses] = useState([]);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(null);
   const [newCourse, setNewCourse] = useState({ code: "", name: "" });
-  const [selectedCourseId, setSelectedCourseId] = useState(null);
+
+  const fetchCourses = async () => {
+    const res = await axios.get(`${API}/courses`);
+    setCourses(res.data);
+  };
 
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  const fetchCourses = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/courses`);
-      setCourses(res.data);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to fetch courses");
-    }
-  };
-
-  const handleAddCourse = async () => {
-    if (!newCourse.code || !newCourse.name) {
-      alert("Please fill in all fields");
-      return;
-    }
-    try {
-      await axios.post(`${API_URL}/courses`, newCourse);
-      setNewCourse({ code: "", name: "" });
-      fetchCourses();
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Failed to add course");
-    }
-  };
+  const filtered = courses.filter(
+    (c) =>
+      c.code.toLowerCase().includes(search.toLowerCase()) ||
+      c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div>
-      <h2>Courses</h2>
+      <input
+        placeholder="Search..."
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
       <ul>
-        {courses.map((course) => (
-          <li key={course.id}>
-            <strong>{course.code}</strong>: {course.name}{" "}
-            <button onClick={() => setSelectedCourseId(course.id)}>
-              View Stats / Add Review
-            </button>
+        {filtered.map((c) => (
+          <li key={c.id}>
+            {c.code} - {c.name}
+            <button onClick={() => setSelected(c.id)}>Open</button>
           </li>
         ))}
       </ul>
 
-      <h3>Add a New Course</h3>
+      <h3>Add Course</h3>
       <input
         placeholder="Code"
-        value={newCourse.code}
-        onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
+        onChange={(e) =>
+          setNewCourse({ ...newCourse, code: e.target.value })
+        }
       />
       <input
         placeholder="Name"
-        value={newCourse.name}
-        onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+        onChange={(e) =>
+          setNewCourse({ ...newCourse, name: e.target.value })
+        }
       />
-      <button onClick={handleAddCourse}>Add Course</button>
+      <button
+        onClick={async () => {
+          await axios.post(`${API}/courses`, newCourse);
+          fetchCourses();
+        }}
+      >
+        Add
+      </button>
 
-      {selectedCourseId && (
-        <div style={{ marginTop: "20px" }}>
-          <CourseStats courseId={selectedCourseId} />
-          <AddReview
-            courseId={selectedCourseId}
-            onReviewAdded={() => fetchCourses()}
-          />
+      {selected && (
+        <div>
+          <CourseStats courseId={selected} />
+          <AddReview courseId={selected} refresh={fetchCourses} />
+          <ReviewList courseId={selected} />
         </div>
       )}
     </div>
   );
 }
-
-export default CourseList;

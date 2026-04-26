@@ -1,9 +1,14 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
+const {
+  createReview,
+  getReviewsByCourse,
+  deleteReview,
+  updateReview,
+} = require("../controllers/reviewsController");
 
-const { createReview } = require("../controllers/reviewsController");
-
-// POST /reviews - create a new review
 router.post("/", createReview);
+router.get("/course/:id", getReviewsByCourse);
+router.delete("/:id", deleteReview);
+router.put("/:id", updateReview);
 
 module.exports = router;

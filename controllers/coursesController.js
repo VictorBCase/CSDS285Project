@@ -1,8 +1,5 @@
 const pool = require("../db");
 
-// ----------------------------
-// Create a new course
-// ----------------------------
 exports.createCourse = async (req, res) => {
   try {
     const { code, name } = req.body;
@@ -12,7 +9,7 @@ exports.createCourse = async (req, res) => {
     }
 
     const result = await pool.query(
-      "INSERT INTO courses (code, name) VALUES ($1, $2) RETURNING *",
+      "INSERT INTO courses (code,name) VALUES ($1,$2) RETURNING *",
       [code, name]
     );
 
@@ -23,9 +20,6 @@ exports.createCourse = async (req, res) => {
   }
 };
 
-// ----------------------------
-// Get all courses
-// ----------------------------
 exports.getAllCourses = async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM courses ORDER BY id ASC");
@@ -36,29 +30,25 @@ exports.getAllCourses = async (req, res) => {
   }
 };
 
-// ----------------------------
-// Get course statistics
-// ----------------------------
 exports.getCourseStats = async (req, res) => {
   try {
-    const courseId = req.params.id;
-
     const result = await pool.query(
       `SELECT 
-        AVG(difficulty) AS avgDifficulty,
-        AVG(hours_per_week) AS avgHours,
-        COUNT(*) AS reviewCount
-       FROM reviews
-       WHERE course_id = $1`,
-      [courseId]
+        AVG(difficulty) avgdifficulty,
+        AVG(hours_per_week) avghours,
+        AVG(rating) avgrating,
+        COUNT(*) reviewcount
+       FROM reviews WHERE course_id=$1`,
+      [req.params.id]
     );
 
-    const stats = result.rows[0];
+    const s = result.rows[0];
 
     res.json({
-      avgDifficulty: stats.avgdifficulty ? parseFloat(stats.avgdifficulty) : 0,
-      avgHours: stats.avghours ? parseFloat(stats.avghours) : 0,
-      reviewCount: parseInt(stats.reviewcount || 0),
+      avgDifficulty: parseFloat(s.avgdifficulty) || 0,
+      avgHours: parseFloat(s.avghours) || 0,
+      avgRating: parseFloat(s.avgrating) || 0,
+      reviewCount: parseInt(s.reviewcount) || 0,
     });
   } catch (err) {
     console.error(err);
