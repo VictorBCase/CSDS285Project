@@ -6,129 +6,155 @@ const API = "http://localhost:3000";
 export default function CourseStats({ courseId }) {
   const [stats, setStats] = useState({});
   const [hist, setHist] = useState([]);
-  const [hovered, setHovered] = useState(null);
 
   useEffect(() => {
-    axios.get(`${API}/courses/${courseId}/stats`).then(r => setStats(r.data));
-    axios.get(`${API}/courses/${courseId}/histogram`).then(r => setHist(r.data));
+    const fetchData = async () => {
+      const [s, h] = await Promise.all([
+        axios.get(`${API}/courses/${courseId}/stats`),
+        axios.get(`${API}/courses/${courseId}/histogram`)
+      ]);
+
+      setStats(s.data);
+      setHist(h.data);
+    };
+
+    fetchData();
   }, [courseId]);
 
-  const maxCount = Math.max(...hist.map(h => h.count), 1);
+  // -----------------------------
+  // INSIGHT HELPERS
+  // -----------------------------
 
-  // 🧠 Insight logic
-  const getInsight = () => {
-    if (hist.length === 0) return "No reviews yet.";
+  const getDifficultyLabel = (d) => {
+    if (!d) return "Unknown";
+    if (d <= 2) return "Easy";
+    if (d <= 3.5) return "Moderate";
+    return "Hard";
+  };
 
-    let total = hist.reduce((sum, h) => sum + h.count, 0);
-    let weighted =
-      hist.reduce((sum, h) => sum + h.difficulty * h.count, 0) / total;
+  const getWorkloadLabel = (h) => {
+    if (!h) return "Unknown";
+    if (h <= 4) return "Light";
+    if (h <= 9) return "Moderate";
+    return "Heavy";
+  };
 
-    if (weighted >= 4) return "Most students find this course difficult.";
-    if (weighted >= 3) return "This course has a moderate difficulty level.";
-    return "Students generally find this course easier.";
+  const getInsightText = () => {
+    const d = stats.avgDifficulty;
+    const h = stats.avgHours;
+
+    if (!d && !h) return "Not enough data yet.";
+
+    if (d <= 2 && h <= 5) {
+      return "Students find this course easy with a light workload.";
+    }
+
+    if (d <= 3.5 && h <= 10) {
+      return "Students find this course moderately challenging with a manageable workload.";
+    }
+
+    if (d > 3.5 || h > 10) {
+      return "Students report a difficult course with a heavy workload.";
+    }
+
+    return "Mixed student feedback across difficulty and workload.";
+  };
+
+  const getColor = (val) => {
+    if (!val) return "bg-gray-400";
+    if (val <= 2) return "bg-green-500";
+    if (val <= 3.5) return "bg-yellow-500";
+    return "bg-red-500";
   };
 
   return (
-    <div className="mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 shadow">
+    <div className="space-y-4">
 
       {/* HEADER */}
-      <h3 className="text-xl font-bold mb-3">📊 Course Analytics</h3>
+      <h2 className="text-xl font-bold">Course Overview</h2>
 
-      {/* STATS ROW */}
-      <div className="grid grid-cols-3 gap-3 text-sm mb-4">
-        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
-          <div className="text-lg font-semibold">
-            {stats.avgRating?.toFixed(1) || 0}
-          </div>
-          <div className="text-xs text-gray-400">Rating</div>
+      {/* -----------------------------
+          TOP METRICS
+      ----------------------------- */}
+      <div className="grid grid-cols-3 gap-3">
+
+        <div className="bg-white dark:bg-gray-800 p-3 rounded shadow text-center">
+          <p className="text-xs text-gray-400">Rating</p>
+          <p className="text-lg font-bold">
+            ⭐ {stats.avgRating?.toFixed(1) || "—"}
+          </p>
         </div>
 
-        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
-          <div className="text-lg font-semibold">
-            {stats.avgDifficulty?.toFixed(1) || 0}
-          </div>
-          <div className="text-xs text-gray-400">Difficulty</div>
+        <div className="bg-white dark:bg-gray-800 p-3 rounded shadow text-center">
+          <p className="text-xs text-gray-400">Workload</p>
+          <p className="text-lg font-bold">
+            ⏱ {stats.avgHours?.toFixed(1) || "—"} hrs
+          </p>
         </div>
 
-        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
-          <div className="text-lg font-semibold">
-            {stats.avgHours?.toFixed(1) || 0}
-          </div>
-          <div className="text-xs text-gray-400">Hours</div>
+        <div className="bg-white dark:bg-gray-800 p-3 rounded shadow text-center">
+          <p className="text-xs text-gray-400">Reviews</p>
+          <p className="text-lg font-bold">
+            🧾 {stats.reviewCount || 0}
+          </p>
         </div>
       </div>
 
-      <p className="text-xs text-gray-400 mb-4">
-        Last review:{" "}
-        {stats.lastReview
-          ? new Date(stats.lastReview).toLocaleDateString()
-          : "N/A"}
-      </p>
+      {/* -----------------------------
+          INSIGHT PANEL (NEW)
+      ----------------------------- */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+        <h3 className="font-semibold mb-2">Insight</h3>
 
-      {/* HISTOGRAM */}
-      <div className="mb-4">
-        <h4 className="font-semibold mb-2">Difficulty Distribution</h4>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          {getInsightText()}
+        </p>
 
-        {hist.length === 0 ? (
-          <p className="text-xs text-gray-400">No data yet</p>
-        ) : (
-          <div className="space-y-3">
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
 
-            {hist.map((h, i) => {
-              const percent = (h.count / maxCount) * 100;
+          <span className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+            Difficulty: {getDifficultyLabel(stats.avgDifficulty)}
+          </span>
 
-              return (
-                <div
-                  key={h.difficulty}
-                  className="flex items-center gap-3 relative"
-                  onMouseEnter={() => setHovered(h.difficulty)}
-                  onMouseLeave={() => setHovered(null)}
-                >
+          <span className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+            Workload: {getWorkloadLabel(stats.avgHours)}
+          </span>
 
-                  {/* LABEL */}
-                  <div className="w-6 text-sm font-medium">
-                    {h.difficulty}
-                  </div>
+        </div>
+      </div>
 
-                  {/* BAR TRACK */}
-                  <div className="flex-1 h-4 bg-gray-300 dark:bg-gray-600 rounded overflow-hidden">
+      {/* -----------------------------
+          LAYOUT
+      ----------------------------- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                    {/* BAR */}
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded transition-all duration-700 ease-out"
-                      style={{
-                        width: `${percent}%`,
-                        animationDelay: `${i * 100}ms`,
-                      }}
-                    />
+        {/* HISTOGRAM */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+          <h3 className="font-semibold mb-2">Difficulty Distribution</h3>
 
-                  </div>
+          {hist.length === 0 ? (
+            <p className="text-sm text-gray-400">No data yet</p>
+          ) : (
+            hist.map((h) => (
+              <div key={h.difficulty} className="flex items-center gap-2 mb-2">
+                <span className="w-4 text-sm">{h.difficulty}</span>
 
-                  {/* COUNT */}
-                  <div className="w-6 text-sm text-gray-400">
-                    {h.count}
-                  </div>
-
-                  {/* TOOLTIP */}
-                  {hovered === h.difficulty && (
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded shadow">
-                      {h.count} reviews
-                    </div>
-                  )}
-
+                <div className="flex-1 bg-gray-200 dark:bg-gray-700 h-2 rounded">
+                  <div
+                    className="h-full bg-blue-500"
+                    style={{ width: `${h.count * 25}px` }}
+                  />
                 </div>
-              );
-            })}
 
-          </div>
-        )}
+                <span className="text-xs text-gray-500">
+                  {h.count}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+
       </div>
-
-      {/* INSIGHT BOX */}
-      <div className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 p-3 rounded text-sm">
-        💡 {getInsight()}
-      </div>
-
     </div>
   );
 }

@@ -24,32 +24,22 @@ router.get("/", async (req, res) => {
   }
 });
 
-// COURSE STATS
+// STATS
 router.get("/:id/stats", getCourseStats);
 
 // HISTOGRAM
 router.get("/:id/histogram", getDifficultyHistogram);
 
-// ✅ DELETE COURSE (manual cascade)
+// DELETE COURSE
 router.delete("/:id", async (req, res) => {
   try {
-    const courseId = req.params.id;
+    const id = req.params.id;
 
-    // delete dependent reviews first
-    await pool.query(
-      "DELETE FROM reviews WHERE course_id = $1",
-      [courseId]
-    );
-
-    // then delete the course
-    await pool.query(
-      "DELETE FROM courses WHERE id = $1",
-      [courseId]
-    );
+    await pool.query("DELETE FROM reviews WHERE course_id=$1", [id]);
+    await pool.query("DELETE FROM courses WHERE id=$1", [id]);
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
