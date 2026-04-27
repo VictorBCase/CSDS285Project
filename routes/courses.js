@@ -9,20 +9,49 @@ const {
 
 const pool = require("../db");
 
+// CREATE COURSE
 router.post("/", createCourse);
 
+// GET ALL COURSES
 router.get("/", async (req, res) => {
-  const result = await pool.query("SELECT * FROM courses ORDER BY id ASC");
-  res.json(result.rows);
+  try {
+    const result = await pool.query(
+      "SELECT * FROM courses ORDER BY id ASC"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// COURSE STATS
 router.get("/:id/stats", getCourseStats);
+
+// HISTOGRAM
 router.get("/:id/histogram", getDifficultyHistogram);
 
-// ✅ DELETE COURSE
+// ✅ DELETE COURSE (manual cascade)
 router.delete("/:id", async (req, res) => {
-  await pool.query("DELETE FROM courses WHERE id=$1", [req.params.id]);
-  res.json({ success: true });
+  try {
+    const courseId = req.params.id;
+
+    // delete dependent reviews first
+    await pool.query(
+      "DELETE FROM reviews WHERE course_id = $1",
+      [courseId]
+    );
+
+    // then delete the course
+    await pool.query(
+      "DELETE FROM courses WHERE id = $1",
+      [courseId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
